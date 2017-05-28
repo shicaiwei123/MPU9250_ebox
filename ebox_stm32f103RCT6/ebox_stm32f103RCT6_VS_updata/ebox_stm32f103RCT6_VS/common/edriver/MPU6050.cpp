@@ -21,7 +21,7 @@
 #include "mpu6050.h"
 
 
-void Mpu6050::begin(uint32_t speed)
+void Mpu9250::begin(uint32_t speed)
 {
     this->speed = speed;
     i2c->take_i2c_right(this->speed);
@@ -38,66 +38,92 @@ void Mpu6050::begin(uint32_t speed)
     i2c->write_byte(SLAVEADDRESS, ACCEL_CONFIG, 0x01);
     i2c->release_i2c_right();
 }
-void Mpu6050::get_id(uint8_t *id)
+void Mpu9250::get_id(uint8_t *id)
 {
+	u8 adress;
+	if (salve_adress == SLAVEADDRESS)
+		adress = WHO_AM_I;
+	if (salve_adress == RA_MAG_ADDRESS)
+		adress = 0x00;
     i2c->take_i2c_right(speed);
-    i2c->read_byte(SLAVEADDRESS, WHO_AM_I, id, 1);
+    i2c->read_byte(salve_adress, adress, id, 1);
     i2c->release_i2c_right();
 };
-void Mpu6050::getAK_id(uint8_t *id)
-{
-	i2c->take_i2c_right(speed);
-	i2c->read_byte(RA_MAG_ADDRESS, 0x00, id, 1);
-	i2c->release_i2c_right();
-};
 
-int16_t  Mpu6050::get_data(uint8_t reg_address)
+int16_t  Mpu9250::get_data_2byte(uint8_t reg_address)
 {
     uint8_t tmp[2];
     i2c->take_i2c_right(speed);
-    i2c->read_byte(SLAVEADDRESS, reg_address, tmp, 2);
+    i2c->read_byte(salve_adress, reg_address, tmp, 2);
     i2c->release_i2c_right();
-
-    return ((tmp[0] << 8) + tmp[1]);
+    if(salve_adress== SLAVEADDRESS)
+        return ((tmp[0] << 8) + tmp[1]);
+	if (salve_adress == RA_MAG_ADDRESS)
+		return ((tmp[1] << 8) + tmp[0]);
+}
+int8_t  Mpu9250::get_data_1byte(uint8_t reg_address)
+{
+	uint8_t tmp[1];
+	i2c->take_i2c_right(speed);
+	i2c->read_byte(salve_adress, reg_address, tmp, 1);
+	i2c->release_i2c_right();
+	return (tmp[0]);
 
 }
-int8_t  Mpu6050::get_data(uint8_t reg_address, int16_t *buf, uint8_t num_to_read)
+int8_t  Mpu9250::get_data(uint8_t reg_address, int16_t *buf, uint8_t num_to_read)
 {
     uint8_t i, readnum;
     uint8_t tmpbuf[20];
 
     i2c->take_i2c_right(speed);
-    readnum = i2c->read_byte(SLAVEADDRESS, reg_address, tmpbuf, num_to_read * 2);
+    readnum = i2c->read_byte(salve_adress, reg_address, tmpbuf, num_to_read * 2);
     i2c->release_i2c_right();
 
     for(i = 0; i < readnum / 2; i++)
     {
-        *buf++ = (tmpbuf[i * 2 + 0] << 8) + (tmpbuf[i * 2 + 1]);
-    }
+		if (salve_adress == SLAVEADDRESS)
+            *buf++ = (tmpbuf[i * 2 + 0] << 8) + (tmpbuf[i * 2 + 1]);
+		if (salve_adress == RA_MAG_ADDRESS)
+            *buf++ = (tmpbuf[i * 2 + 1] << 8) + (tmpbuf[i * 2 + 0]);
+	}
     return readnum / 2;
 }
 
-void Mpu6050::AK8963(u8 data)
-{
-	i2c->take_i2c_right(this->speed);
-	i2c->write_byte(SLAVEADDRESS, INT_PIN_CFG, data);
-	i2c->release_i2c_right();
-};
 
-int16_t  Mpu6050::get_data_AK(uint8_t reg_address)
+void  Mpu9250::write_data(u8 reg_address, u8 data)
 {
-	uint8_t tmp[2];
 	i2c->take_i2c_right(speed);
-	i2c->read_byte(RA_MAG_ADDRESS, reg_address, tmp, 2);
+	i2c->write_byte(salve_adress, reg_address, data);
 	i2c->release_i2c_right();
+}
 
-	return ((tmp[1] << 8) + tmp[0]);
-
-};
-
-void Mpu6050::AK8963_Mode(u8 data)
+u8 Mpu9250::get_data_MPU(uint8_t reg_address)
 {
-	i2c->take_i2c_right(this->speed);
-	i2c->write_byte(RA_MAG_ADDRESS, MAG_CNTL1, data);
+	uint8_t tmp[1];
+	i2c->take_i2c_right(speed);
+	i2c->read_byte(SLAVEADDRESS, reg_address, tmp, 1);
 	i2c->release_i2c_right();
-};
+	return (tmp[0]);
+}
+void Mpu9250::mode(u8 mode)
+{
+	if (mode)
+	{
+		salve_flag = 1;
+		i2c->take_i2c_right(this->speed);
+		i2c->write_byte(SLAVEADDRESS, INT_PIN_CFG, 0x02);
+		i2c->release_i2c_right();
+		salve_adress = RA_MAG_ADDRESS;
+	}
+
+	if (!mode)
+	{
+		salve_flag = 0;
+		i2c->take_i2c_right(this->speed);
+		i2c->write_byte(SLAVEADDRESS, INT_PIN_CFG, 0x00);
+		i2c->release_i2c_right();
+		salve_adress = SLAVEADDRESS;
+	}
+
+
+}

@@ -22,7 +22,9 @@
 #define __MPU6050_H
 
 #include "ebox.h"
-
+/*模式选择，0为mpu6500模式，1为AK8963模式*/
+#define MPU6500   0
+#define AK8963    1
 
 /*MPU6050 Register Address ------------------------------------------------------------*/
 #define MPU6050_RA_XG_OFFS_TC       0x00 //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
@@ -82,34 +84,48 @@
 #define INT_PIN_CFG       0x37
 #define SLAVEAWRITE       0xD1
 #define RA_MAG_ADDRESS		0x18
+#define RA_MAG_INFO		    0x01
+#define RA_MAG_ST1	        0x02
 #define RA_MAG_XOUT_L		0x03
 #define RA_MAG_XOUT_H		0x04
 #define RA_MAG_YOUT_L		0x05
 #define RA_MAG_YOUT_H		0x06
 #define RA_MAG_ZOUT_L		0x07
 #define RA_MAG_ZOUT_H		0x08
+#define RA_MAG_ST2		    0x09
 #define MAG_CNTL1           0x0A
+#define MAG_CNTL2           0x0B
+#define MAG_TEST1           0x0D
 
-class Mpu6050
+class Mpu9250
 {
 public:
-    Mpu6050(I2c *i2c)
+	Mpu9250(I2c *i2c)
     {
         this->i2c = i2c;
     };
     void        begin(uint32_t speed);
-    int16_t 	get_data(uint8_t reg_address);
+	//设定模式
+	void        mode(u8 mode);
+	int16_t 	get_data_2byte(uint8_t reg_address);
+	//字节读取，用于读取特定寄存器
+	int8_t   	get_data_1byte(uint8_t reg_address);
+	//连续地址寄存器数据读取
     int8_t 		get_data(uint8_t reg_address, int16_t *buf, uint8_t num_to_read);
+	//往寄存器写数据
+	void        write_data(u8 reg_address, u8 data);
+	//获取设备id
     void        get_id(uint8_t *id);
-	void        AK8963(u8 data);
-	void        getAK_id(uint8_t *id);
-	int16_t 	get_data_AK(uint8_t reg_address);
-	void        AK8963_Mode(u8 data);
+	//任何模式下对MPU6050寄存器的读取，常常读取0x37，可以检测是否正确切换到磁力计模式
+	uint8_t     get_data_MPU(uint8_t reg_address);
+
 
 
 private:
     I2c         *i2c;
     uint32_t    speed;
+	u8 salve_flag;
+	u8 salve_adress;
 };
 
 #endif
