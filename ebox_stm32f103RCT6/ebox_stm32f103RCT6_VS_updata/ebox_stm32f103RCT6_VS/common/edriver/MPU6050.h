@@ -151,11 +151,15 @@ class Mpu9250_Ahrs:public Mpu9250
 public:
 	//构造函数
 	Mpu9250_Ahrs(I2c *i2c);
+	//原始数据获取，不成功返回-1.-2。成功没有设定返回值，未知返回值
+	int Get_MPU9250_Data(void);
 	//测试函数：测试初始数据是否成功获取
 	void get_data_buf(int16_t *mpu, int16_t *AK);
-	int Get_MPU9250_Data(void);
+
 	//ADC转换，将ADC数据转换为直观数据
 	void AHRS_Dataprepare(void);
+	//ADC数据转换测试
+	void get_data_adc(float *mpu, float *AK);
 private:
 	//加速度计校正
 	void Acc_Correct(void);

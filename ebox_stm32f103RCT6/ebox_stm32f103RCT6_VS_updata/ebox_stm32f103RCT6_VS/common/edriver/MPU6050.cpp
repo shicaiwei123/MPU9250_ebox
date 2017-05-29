@@ -281,3 +281,19 @@ void Mpu9250_Ahrs::Mag_Correct()
 	Magoffset.Y = Magy / numMag;
 	Magoffset.Z = Magz / numMag;
 }
+
+void Mpu9250_Ahrs::get_data_adc(float *mpu, float *AK)
+{
+	*mpu++ = this->AccFinal.X;
+	*mpu++ = this->AccFinal.Y;
+	*mpu++ = this->AccFinal.Z;
+	*mpu++ = this->GyroFinal.X;
+	*mpu++ = this->GyroFinal.Y;
+	*mpu =   this->GyroFinal.Z;
+
+	*AK++ = this->MagFinal.X;
+	*AK++ = this->MagFinal.Y;
+	*AK =   this->MagFinal.Z;
+
+
+}

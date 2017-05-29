@@ -26,6 +26,8 @@ void setup()
 }
 	int16_t tmp[7];
 	int16_t AK_tmp[3];
+	float tmp_adc[7];
+	float AK_tmp_adc[3];
 	int8_t AK_test[10];
 	int16_t mag;
 	int16_t x, y, z;
@@ -41,8 +43,10 @@ void setup()
 
 		while (1)
 		{
-			mpu.Get_MPU9250_Data();
+			mpu.AHRS_Dataprepare();
 			mpu.get_data_buf(tmp, AK_tmp);
+			mpu.get_data_adc(tmp_adc, AK_tmp_adc);
+
 			/*
 			mpu.mode(MPU6500);
 			mpu.get_id(&id);
@@ -63,6 +67,7 @@ void setup()
 			AK_tmp[2] = mpu.get_data_2byte(RA_MAG_ZOUT_L);
 			mpu.get_data_2byte(RA_MAG_ST2);
 			*/
+			/*
 			uart1.printf("\r\naccx = %d", tmp[0]);
 			uart1.printf("\r\naccy = %d", tmp[1]);
 			uart1.printf("\r\naccz = %d", tmp[2]);
@@ -76,6 +81,20 @@ void setup()
 			uart1.printf("\r\ntest0 = %d", AK_tmp[0]);
 			uart1.printf("\r\ntest1 = %d", AK_tmp[1]);
 			uart1.printf("\r\ntest2 = %d", AK_tmp[2]);
+			uart1.printf("\r\n==========");
+			*/
+			uart1.printf("\r\naccx_adc = %.1f", tmp_adc[0]);
+			uart1.printf("\r\naccy_adc = %.1f", tmp_adc[1]);
+			uart1.printf("\r\naccz_adc = %.1f", tmp_adc[2]);
+			uart1.printf("\r\ntemp_adc = %.1f", tmp_adc[3]);
+			uart1.printf("\r\ngyrox_adc = %.1f", tmp_adc[4]);
+			uart1.printf("\r\ngyroy_adc = %.1f", tmp_adc[5]);
+			uart1.printf("\r\ngyroz_adc = %.1f", tmp_adc[6]);
+			uart1.printf("\r\n==========");
+
+			uart1.printf("\r\ntest0_adc = %.1f", AK_tmp_adc[0]);
+			uart1.printf("\r\ntest1_adc = %.1f", AK_tmp_adc[1]);
+			uart1.printf("\r\ntest2_adc = %.1f", AK_tmp_adc[2]);
 		//	uart1.printf("\r\ntest3 = %d", AK_test[3]);
 
 			delay_ms(100);
