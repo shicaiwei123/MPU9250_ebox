@@ -97,6 +97,21 @@
 #define MAG_CNTL2           0x0B
 #define MAG_TEST1           0x0D
 
+//传感器原始数据
+typedef struct  sensor_data
+{
+	short X;
+	short Y;
+	short Z;
+}SENSOR_DATA;
+//处理后的数据
+typedef struct  imu_data
+{
+	float X;
+	float Y;
+	float Z;
+}IMU_DATA;
+
 class Mpu9250
 {
 public:
@@ -129,3 +144,41 @@ private:
 };
 
 #endif
+
+
+class Mpu9250_Ahrs:public Mpu9250
+{
+public:
+	//构造函数
+	Mpu9250_Ahrs(I2c *i2c);
+	//测试函数：测试初始数据是否成功获取
+	void get_data_buf(int16_t *mpu, int16_t *AK);
+	int Get_MPU9250_Data(void);
+	//ADC转换，将ADC数据转换为直观数据
+	void AHRS_Dataprepare(void);
+private:
+	//加速度计校正
+	void Acc_Correct(void);
+	//陀螺仪校正
+	void Gyro_Correct(void);
+	//磁力计校正
+	void Mag_Correct(void);
+	//处理前数据
+	 SENSOR_DATA Gyrobuf;//陀螺仪
+	 SENSOR_DATA Accbuf; //加速度
+	 SENSOR_DATA Magbuf;//磁力计
+
+	 SENSOR_DATA Accoffset;//加速度偏移量
+	 SENSOR_DATA Gyrooffset;//陀螺仪偏移量
+	 SENSOR_DATA Magoffset;//磁力计偏移量
+
+	 //处理后的数据
+	  IMU_DATA GyroFinal;
+	  IMU_DATA AccFinal;
+	  IMU_DATA MagFinal;
+	  //最终参数
+	   float temp;//温度
+	   float Pitch;
+	   float Roll;
+	   float Yaw;
+};

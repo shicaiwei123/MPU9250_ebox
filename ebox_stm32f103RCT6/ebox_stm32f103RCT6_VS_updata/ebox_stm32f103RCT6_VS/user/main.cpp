@@ -14,7 +14,9 @@
 
 #include "ebox.h" 
 #include "MPU6050.h"
-Mpu9250 mpu(&i2c1);
+//Mpu9250 mpu(&i2c1);
+Mpu9250_Ahrs mpu(&i2c1);
+
 void setup() 
 {    
 	ebox_init();
@@ -39,6 +41,9 @@ void setup()
 
 		while (1)
 		{
+			mpu.Get_MPU9250_Data();
+			mpu.get_data_buf(tmp, AK_tmp);
+			/*
 			mpu.mode(MPU6500);
 			mpu.get_id(&id);
 			mpu.get_data(ACCEL_XOUT_H, tmp, 7);
@@ -56,8 +61,8 @@ void setup()
 			AK_tmp[0] = mpu.get_data_2byte(RA_MAG_XOUT_L);
 			AK_tmp[1] = mpu.get_data_2byte(RA_MAG_YOUT_L);
 			AK_tmp[2] = mpu.get_data_2byte(RA_MAG_ZOUT_L);
-			AK_test[3] = mpu.get_data_2byte(RA_MAG_ST2);
-
+			mpu.get_data_2byte(RA_MAG_ST2);
+			*/
 			uart1.printf("\r\naccx = %d", tmp[0]);
 			uart1.printf("\r\naccy = %d", tmp[1]);
 			uart1.printf("\r\naccz = %d", tmp[2]);
@@ -71,7 +76,7 @@ void setup()
 			uart1.printf("\r\ntest0 = %d", AK_tmp[0]);
 			uart1.printf("\r\ntest1 = %d", AK_tmp[1]);
 			uart1.printf("\r\ntest2 = %d", AK_tmp[2]);
-			uart1.printf("\r\ntest3 = %d", AK_test[3]);
+		//	uart1.printf("\r\ntest3 = %d", AK_test[3]);
 
 			delay_ms(100);
 			PA8.toggle();//将当前的状态进行翻转 
