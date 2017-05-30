@@ -16,13 +16,16 @@
 #include "MPU6050.h"
 //Mpu9250 mpu(&i2c1);
 Mpu9250_Ahrs mpu(&i2c1);
-
 void setup() 
 {    
 	ebox_init();
 	uart1.begin(115200);
 	mpu.begin(400000);
 	PA8.mode(OUTPUT_PP);
+	uart1.printf("intial....");
+	mpu.Acc_Correct();
+	mpu.Gyro_Correct();
+	
 }
 	int16_t tmp[7];
 	int16_t AK_tmp[3];
@@ -37,15 +40,27 @@ void setup()
 	int8_t ST1;
 	u8 mpu6050_temp;
 	u8 AK_temp;
+	float q[4];
+	float pitch;
+	float roll;
+	float yaw;
+	u16 count;
 	int main(void)
 	{
 		setup();
-
+		count = 0;
 		while (1)
 		{
+			count++;
+			if (count == 1300)
+				mpu.update_data();
 			mpu.AHRS_Dataprepare();
-			mpu.get_data_buf(tmp, AK_tmp);
-			mpu.get_data_adc(tmp_adc, AK_tmp_adc);
+			//mpu.get_data_buf(tmp, AK_tmp);
+			//mpu.get_data_adc(tmp_adc, AK_tmp_adc);
+			//mpu.get_data_q(q);
+			mpu.AHRSupdate();
+			mpu.get_data_ahrs(&pitch, &roll, &yaw);
+
 
 			/*
 			mpu.mode(MPU6500);
@@ -83,6 +98,7 @@ void setup()
 			uart1.printf("\r\ntest2 = %d", AK_tmp[2]);
 			uart1.printf("\r\n==========");
 			*/
+			/*
 			uart1.printf("\r\naccx_adc = %.1f", tmp_adc[0]);
 			uart1.printf("\r\naccy_adc = %.1f", tmp_adc[1]);
 			uart1.printf("\r\naccz_adc = %.1f", tmp_adc[2]);
@@ -95,9 +111,19 @@ void setup()
 			uart1.printf("\r\ntest0_adc = %.1f", AK_tmp_adc[0]);
 			uart1.printf("\r\ntest1_adc = %.1f", AK_tmp_adc[1]);
 			uart1.printf("\r\ntest2_adc = %.1f", AK_tmp_adc[2]);
+			uart1.printf("\r\n==========");
+			*/
+			
 		//	uart1.printf("\r\ntest3 = %d", AK_test[3]);
-
-			delay_ms(100);
+			uart1.printf("\r\nq0 = %.1f", q[0]);
+			uart1.printf("\r\nq1 = %.1f", q[1]);
+			uart1.printf("\r\nq2 = %.1f", q[2]);
+			uart1.printf("\r\nq3 = %.1f", q[3]);
+			uart1.printf("\r\npitch = %.2f", pitch);
+			uart1.printf("\r\nroll = %.2f", roll);
+			uart1.printf("\r\nyaw = %.2f", yaw);
+			
+			//delay_ms(100);
 			PA8.toggle();//将当前的状态进行翻转 
 			/*
 			AK_test[0] = mpu.get_data_2byte(RA_MAG_XOUT_L);

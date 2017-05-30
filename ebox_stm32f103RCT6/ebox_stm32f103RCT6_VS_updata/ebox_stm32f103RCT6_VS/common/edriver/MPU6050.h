@@ -22,6 +22,7 @@
 #define __MPU6050_H
 
 #include "ebox.h"
+#include "math.h"
 /*模式选择，0为mpu6500模式，1为AK8963模式*/
 #define MPU6500   0
 #define AK8963    1
@@ -59,7 +60,7 @@
 #define MPU6050_RA_WHO_AM_I         0x75
 
 #define	SMPLRT_DIV		0x19	//陀螺仪采样率，典型值：0x07(125Hz)
-#define	CONFIG				0x1A	//低通滤波频率，典型值：0x06(5Hz)
+#define	CONFIG			0x1A	//低通滤波频率，典型值：0x06(5Hz)
 #define	GYRO_CONFIG		0x1B	//陀螺仪自检及测量范围，典型值：0x18(不自检，2000deg/s)
 #define	ACCEL_CONFIG	0x1C	//加速计自检、测量范围及高通滤波频率，典型值：0x01(不自检，2G，5Hz)
 #define	ACCEL_XOUT_H	0x3B
@@ -96,6 +97,9 @@
 #define MAG_CNTL1           0x0A
 #define MAG_CNTL2           0x0B
 #define MAG_TEST1           0x0D
+//AHRS算法数据
+#define betaDef		0.2f		// 2 * proportional gain
+#define sampleFreq	100.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
 
 //传感器原始数据
 typedef struct  sensor_data
@@ -136,6 +140,7 @@ public:
 
 
 
+
 private:
     I2c         *i2c;
     uint32_t    speed;
@@ -160,13 +165,25 @@ public:
 	void AHRS_Dataprepare(void);
 	//ADC数据转换测试
 	void get_data_adc(float *mpu, float *AK);
-private:
 	//加速度计校正
 	void Acc_Correct(void);
 	//陀螺仪校正
 	void Gyro_Correct(void);
 	//磁力计校正
 	void Mag_Correct(void);
+	//姿态解算得出欧拉角，从外部传入参数
+	void AHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
+	//调用内部参数
+	void AHRSupdate(void);
+	//获取欧拉角
+	void get_data_ahrs(float *Pitch, float *Roll, float *Yaw);
+	//测试代码：测试q0,q1,q2,q3
+	void get_data_q(float *q);
+	void update_data(void);
+private:
+	//快速逆平方根
+	float invSqrt(float x);
+	
 	//处理前数据
 	 SENSOR_DATA Gyrobuf;//陀螺仪
 	 SENSOR_DATA Accbuf; //加速度
@@ -185,4 +202,10 @@ private:
 	   float Pitch;
 	   float Roll;
 	   float Yaw;
+	   float Pitch_off;
+	   float Roll_off;
+	   float Yaw_off;
+
+
+	   float q0 , q1  , q2 , q3;	// quaternion of sensor frame relativ
 };
