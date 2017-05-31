@@ -29,7 +29,7 @@ void Mpu9250::begin(uint32_t speed)
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x80);    //复位
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x00);   //唤醒
     i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x01);
-    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x09); //100hz采样
+    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x14); //100hz采样
     i2c->write_byte(SLAVEADDRESS, CONFIG, 0x03);    //41hz滤波
     i2c->write_byte(SLAVEADDRESS, GYRO_CONFIG, 0x18);
     i2c->write_byte(SLAVEADDRESS, ACCEL_CONFIG, 0x00);//2g

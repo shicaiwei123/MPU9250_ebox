@@ -25,6 +25,7 @@ void setup()
 	uart1.printf("intial....");
 	mpu.Acc_Correct();
 	mpu.Gyro_Correct();
+//	mpu.Mag_Correct();
 	
 }
 	int16_t tmp[7];
@@ -52,7 +53,7 @@ void setup()
 		while (1)
 		{
 			count++;
-			if (count == 1300)
+			if (count == 500)
 				mpu.update_data();
 			mpu.AHRS_Dataprepare();
 			//mpu.get_data_buf(tmp, AK_tmp);

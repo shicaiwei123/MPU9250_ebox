@@ -99,7 +99,7 @@
 #define MAG_TEST1           0x0D
 //AHRS算法数据
 #define betaDef		0.2f		// 2 * proportional gain
-#define sampleFreq	100.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
+#define sampleFreq	50.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
 
 //传感器原始数据
 typedef struct  sensor_data
