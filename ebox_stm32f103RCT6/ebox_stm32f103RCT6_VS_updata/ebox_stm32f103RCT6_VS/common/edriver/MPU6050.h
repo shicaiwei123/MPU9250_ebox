@@ -100,6 +100,9 @@
 //AHRS算法数据
 #define betaDef		0.2f		// 2 * proportional gain
 #define sampleFreq	50.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
+#define Kp 0.6f	//比例增益支配收敛率accellrometer/magnetometer
+#define Ki 0.001f //积分增益执行速率陀螺仪的衔接gyroscopeases
+#define halfT 0.0025f//采样周期的一半，若周期为10ms,则一般为0.005s
 
 //传感器原始数据
 typedef struct  sensor_data
@@ -180,9 +183,11 @@ public:
 	//测试代码：测试q0,q1,q2,q3
 	void get_data_q(float *q);
 	void update_data(void);
-private:
 	//快速逆平方根
 	float invSqrt(float x);
+private:
+
+
 	
 	//处理前数据
 	 SENSOR_DATA Gyrobuf;//陀螺仪
@@ -208,4 +213,5 @@ private:
 
 
 	   float q0 , q1  , q2 , q3;	// quaternion of sensor frame relativ
+	   float exInt, eyInt, ezInt;
 };

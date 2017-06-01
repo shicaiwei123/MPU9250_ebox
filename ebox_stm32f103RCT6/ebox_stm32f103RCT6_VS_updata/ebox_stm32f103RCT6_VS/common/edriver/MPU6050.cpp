@@ -29,8 +29,8 @@ void Mpu9250::begin(uint32_t speed)
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x80);    //复位
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x00);   //唤醒
     i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x01);
-    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x14); //100hz采样
-    i2c->write_byte(SLAVEADDRESS, CONFIG, 0x03);    //41hz滤波
+    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x14); //50hz采样
+    i2c->write_byte(SLAVEADDRESS, CONFIG, 0x06);    //10hz滤波
     i2c->write_byte(SLAVEADDRESS, GYRO_CONFIG, 0x18);
     i2c->write_byte(SLAVEADDRESS, ACCEL_CONFIG, 0x00);//2g
     i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x01); 
@@ -140,6 +140,9 @@ Mpu9250_Ahrs::Mpu9250_Ahrs(I2c *i2c):Mpu9250(i2c)
 	Pitch_off = 0.00f;
 	Roll_off = 0.00f;
 	Yaw_off = 0.00f;
+	exInt = 0;
+	eyInt = 0;
+	ezInt = 0;
 
 }
 
@@ -227,7 +230,7 @@ void Mpu9250_Ahrs::AHRS_Dataprepare()
 void Mpu9250_Ahrs::Acc_Correct()
 {
 	u8 i = 0;
-	u8 numAcc = 200;//取200次累计量
+	u8 numAcc = 200;//取100次累计量
 
 	int Angleaccx = 0;  //加速度计校正中间变量
 	int Angleaccy = 0;
@@ -272,7 +275,7 @@ void Mpu9250_Ahrs::Gyro_Correct()
 void Mpu9250_Ahrs::Mag_Correct()
 {
 	unsigned char i = 0;
-	unsigned char numMag = 200;
+	unsigned char numMag = 100;
 	int Magx = 0;
 	int Magy = 0;
 	int Magz = 0;							  //磁力计校正中间变量
@@ -331,7 +334,7 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 	float mx = this->MagFinal.X;
 	float my = this->MagFinal.Y;
 	float mz = this->MagFinal.Z;
-
+/*
 	float recipNorm;
 	float s0, s1, s2, s3;
 	float qDot1, qDot2, qDot3, qDot4;
@@ -427,12 +430,190 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 	q1 *= recipNorm;
 	q2 *= recipNorm;
 	q3 *= recipNorm;
+	*/
+	 
+	float recipNorm;
+	float q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
+	float hx, hy, hz,bx,bz;
+	float vx, vy, vz, wx, wy, wz;
+	float ex, ey, ez;
+	float qa, qb, qc;
+	float integralFBx, integralFBy, integralFBz;
+	if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+	{
 
+		// Normalise accelerometer measurement
+		//正常化的加速度测量值
+		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+		ax *= recipNorm;
+		ay *= recipNorm;
+		az *= recipNorm;
 
-	//四元数转换成欧拉角
-	Pitch = asin(2 * q0*q2 - 2 * q1*q3) / 3.14 * 180;
-	Roll = atan2(2 * q0q1 + 2 * q2q3, 1 - 2 * q1q1 - 2 * q2q2) / 3.14 * 180;
-	Yaw = atan2(2 * q0q3 + 2 * q1*q2, 1 - 2 * q2*q2 - 2 * q3*q3) / 3.14 * 180;
+		// Normalise magnetometer measurement
+		//正常化的磁力计测量值
+		recipNorm = invSqrt(mx * mx + my * my + mz * mz);
+		mx *= recipNorm;
+		my *= recipNorm;
+		mz *= recipNorm;
+
+		//预先进行四元数数据运算，以避免重复运算带来的效率问题。
+			// Auxiliary variables to avoid repeated arithmetic
+		q0q0 = q0 * q0;
+		q0q1 = q0 * q1;
+		q0q2 = q0 * q2;
+		q0q3 = q0 * q3;
+		q1q1 = q1 * q1;
+		q1q2 = q1 * q2;
+		q1q3 = q1 * q3;
+		q2q2 = q2 * q2;
+		q2q3 = q2 * q3;
+		q3q3 = q3 * q3;
+
+		hx = 2.0f * (mx * (0.5f - q2q2 - q3q3) + my * (q1q2 - q0q3) + mz * (q1q3 + q0q2));
+		hy = 2.0f * (mx * (q1q2 + q0q3) + my * (0.5f - q1q1 - q3q3) + mz * (q2q3 - q0q1));
+		hz= 2.0f * (mx * (q1q3 - q0q2) + my * (q2q3 + q0q1) + mz * (0.5f - q1q1 - q2q2));
+		bx = sqrt(hx * hx + hy * hy);
+		bz = hz;
+
+		vx = q1q3 - q0q2;
+		vy = q0q1 + q2q3;
+		vz = q0q0 -0.5f + q3q3;
+		wx = bx * (0.5f - q2q2 - q3q3) + bz * (q1q3 - q0q2);
+		wy = bx * (q1q2 - q0q3) + bz * (q0q1 + q2q3);
+		wz = bx * (q0q2 + q1q3) + bz * (0.5f - q1q1 - q2q2);
+
+		//使用叉积来计算重力和地磁误差。
+			// Error is sum of cross product between estimated direction and measured direction of field vectors
+		ex = (ay * vz - az * vy) + (my * wz - mz * wy);
+		ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
+		ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
+		//对误差进行积分
+		exInt += Ki * ex * (1.0f / sampleFreq); // integral error scaled by Ki
+		eyInt += Ki * ey * (1.0f / sampleFreq);
+		ezInt += Ki * ez * (1.0f / sampleFreq);
+
+		//将真实的加速度测量值以一定比例作用于陀螺仪，0就是完全信任陀螺仪，1就是完全信任加速度，大于1？
+		gx = gx + Kp*ex + exInt;
+		gy = gy + Kp*ey + eyInt;
+		gz = gz + Kp*ez + ezInt;
+
+       ///*
+		qa = q0;
+		qb = q1;
+		qc = q2;
+		q0 += (-qb * gx - qc * gy - q3 * gz);
+		q1 += (qa * gx + qc * gz - q3 * gy);
+		q2 += (qa * gy - qb * gz + q3 * gx);
+		q3 += (qa * gz + qb * gy - qc * gx);
+		/*
+		qa = q0;
+		qb = q1;
+		qc = q2;
+		q0 += (-qb * gx - qc * gy - q3 * gz)*halfT;
+		q1 += (qa * gx + qc * gz - q3 * gy)*halfT;
+		q2 += (qa * gy - qb * gz + q3 * gx)*halfT;
+		q3 += (qa * gz + qb * gy - qc * gx)*halfT;
+		*/
+		// Normalise quaternion
+		recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+		q0 *= recipNorm;
+		q1 *= recipNorm;
+		q2 *= recipNorm;
+		q3 *= recipNorm;
+
+		/*
+		float norm;
+		float hx, hy, hz, bx, bz;
+		float vx, vy, vz, wx, wy, wz; //v*当前姿态计算得来的重力在三轴上的分量
+		float ex, ey, ez;
+		float qa, qb,qc;
+
+		// auxiliary variables to reduce number of repeated operations
+		float q0q0 = q0*q0;
+		float q0q1 = q0*q1;
+		float q0q2 = q0*q2;
+		float q0q3 = q0*q3;
+		float q1q1 = q1*q1;
+		float q1q2 = q1*q2;
+		float q1q3 = q1*q3;
+		float q2q2 = q2*q2;
+		float q2q3 = q2*q3;
+		float q3q3 = q3*q3;
+
+		// normalise the measurements
+		norm = sqrt(ax*ax + ay*ay + az*az);
+		ax = ax / norm;
+		ay = ay / norm;
+		az = az / norm;
+		norm = sqrt(mx*mx + my*my + mz*mz);
+		mx = mx / norm;
+		my = my / norm;
+		mz = mz / norm;
+
+		// compute reference direction of magnetic field
+		hx = 2 * mx*(0.5 - q2q2 - q3q3) + 2 * my*(q1q2 - q0q3) + 2 * mz*(q1q3 + q0q2);
+		hy = 2 * mx*(q1q2 + q0q3) + 2 * my*(0.5 - q1q1 - q3q3) + 2 * mz*(q2q3 - q0q1);
+		hz = 2 * mx*(q1q3 - q0q2) + 2 * my*(q2q3 + q0q1) + 2 * mz*(0.5 - q1q1 - q2q2);
+		bx = sqrt((hx*hx) + (hy*hy));
+		bz = hz;
+
+		// estimated direction of gravity and magnetic field (v and w) 
+		//参考坐标n系转化到载体坐标b系的用四元数表示的方向余弦矩阵第三列即是。
+		//处理后的重力分量
+		vx = 2 * (q1q3 - q0q2);
+		vy = 2 * (q0q1 + q2q3);
+		vz = q0q0 - q1q1 - q2q2 + q3q3;
+		//处理后的mag
+		wx = 2 * bx*(0.5 - q2q2 - q3q3) + 2 * bz*(q1q3 - q0q2);
+		wy = 2 * bx*(q1q2 - q0q3) + 2 * bz*(q0q1 + q2q3);
+		wz = 2 * bx*(q0q2 + q1q3) + 2 * bz*(0.5 - q1q1 - q2q2);
+
+		// error is sum of cross product between reference direction of fields and direction measured by sensors 体现在加速计补偿和磁力计补偿，因为仅仅依靠加速计补偿没法修正Z轴的变差，所以还需要通过磁力计来修正Z轴。（公式28）。《四元数解算姿态完全解析及资料汇总》的作者把这部分理解错了，不是什么叉积的差，而叉积的计算就是这样的。计算方法是公式10。
+		ex = (ay*vz - az*vy) + (my*wz - mz*wy);
+		ey = (az*vx - ax*vz) + (mz*wx - mx*wz);
+		ez = (ax*vy - ay*vx) + (mx*wy - my*wx);
+
+		// integral error scaled integral gain 
+		exInt = exInt + ex*Ki* (1.0f / sampleFreq);
+		eyInt = eyInt + ey*Ki* (1.0f / sampleFreq);
+		ezInt = ezInt + ez*Ki* (1.0f / sampleFreq);
+		// adjusted gyroscope measurements
+		//将误差PI后补偿到陀螺仪，即补偿零点漂移。通过调节Kp、Ki两个参数，可以控制加速度计修正陀螺仪积分姿态的速度。（公式16和公式29）
+		gx = gx + Kp*ex + exInt;
+		gy = gy + Kp*ey + eyInt;
+		gz = gz + Kp*ez + ezInt;
+
+		// integrate quaternion rate and normalize
+		//一阶龙格库塔法更新四元数
+		/*
+		qa = q0;
+		qb = q1;
+		qc = q2;
+		q0 += (-qb * gx - qc * gy - q3 * gz)*halfT;
+		q1 += (qa * gx + qc * gz - q3 * gy)*halfT;
+		q2 += (qa * gy - qb * gz + q3 * gx)*halfT;
+		q3 += (qa * gz + qb * gy - qc * gx)*halfT;
+		*/
+		/*
+		q0 = q0 + (-q1*gx - q2*gy - q3*gz)*halfT;
+		q1 = q1 + (q0*gx + q2*gz - q3*gy)*halfT;
+		q2 = q2 + (q0*gy - q1*gz + q3*gx)*halfT;
+		q3 = q3 + (q0*gz + q1*gy - q2*gx)*halfT;
+		
+		// normalise quaternion
+		norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+		q0 = q0 / norm;
+		q1 = q1 / norm;
+		q2 = q2 / norm;
+		q3 = q3 / norm;
+		*/
+		//四元数转换成欧拉角
+		Pitch = asin(2 * q0*q2 - 2 * q1*q3) / 3.14 * 180;
+		Roll = atan2(2 * q0*q1 + 2 * q2*q3, 1 - 2 * q1*q1 - 2 * q2*q2) / 3.14 * 180;
+		Yaw = atan2(2 * q0*q3 + 2 * q1*q2, 1 - 2 * q2*q2 - 2 * q3*q3) / 3.14 * 180;
+
+	}
+
 }
 
 void Mpu9250_Ahrs::get_data_ahrs(float *m_Pitch, float *m_Roll, float *m_Yaw)

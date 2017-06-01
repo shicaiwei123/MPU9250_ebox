@@ -50,13 +50,15 @@ void setup()
 	{
 		setup();
 		count = 0;
+		int i=0;
 		while (1)
 		{
+			i++;
 			count++;
 			if (count == 500)
 				mpu.update_data();
 			mpu.AHRS_Dataprepare();
-			//mpu.get_data_buf(tmp, AK_tmp);
+			mpu.get_data_buf(tmp, AK_tmp);
 			//mpu.get_data_adc(tmp_adc, AK_tmp_adc);
 			//mpu.get_data_q(q);
 			mpu.AHRSupdate();
@@ -83,22 +85,9 @@ void setup()
 			AK_tmp[2] = mpu.get_data_2byte(RA_MAG_ZOUT_L);
 			mpu.get_data_2byte(RA_MAG_ST2);
 			*/
-			/*
-			uart1.printf("\r\naccx = %d", tmp[0]);
-			uart1.printf("\r\naccy = %d", tmp[1]);
-			uart1.printf("\r\naccz = %d", tmp[2]);
-			uart1.printf("\r\ntemp = %d", tmp[3]);
-			uart1.printf("\r\ngyrox = %d", tmp[4]);
-			uart1.printf("\r\ngyroy = %d", tmp[5]);
-			uart1.printf("\r\ngyroz = %d", tmp[6]);
-			uart1.printf("\r\n==========");
+			
 
-
-			uart1.printf("\r\ntest0 = %d", AK_tmp[0]);
-			uart1.printf("\r\ntest1 = %d", AK_tmp[1]);
-			uart1.printf("\r\ntest2 = %d", AK_tmp[2]);
-			uart1.printf("\r\n==========");
-			*/
+			
 			/*
 			uart1.printf("\r\naccx_adc = %.1f", tmp_adc[0]);
 			uart1.printf("\r\naccy_adc = %.1f", tmp_adc[1]);
@@ -113,16 +102,37 @@ void setup()
 			uart1.printf("\r\ntest1_adc = %.1f", AK_tmp_adc[1]);
 			uart1.printf("\r\ntest2_adc = %.1f", AK_tmp_adc[2]);
 			uart1.printf("\r\n==========");
-			*/
+			
 			
 		//	uart1.printf("\r\ntest3 = %d", AK_test[3]);
 			uart1.printf("\r\nq0 = %.1f", q[0]);
 			uart1.printf("\r\nq1 = %.1f", q[1]);
 			uart1.printf("\r\nq2 = %.1f", q[2]);
 			uart1.printf("\r\nq3 = %.1f", q[3]);
-			uart1.printf("\r\npitch = %.2f", pitch);
-			uart1.printf("\r\nroll = %.2f", roll);
-			uart1.printf("\r\nyaw = %.2f", yaw);
+			*/
+			if (i == 8)
+			{
+				uart1.printf("\r\naccx = %d", tmp[0]);
+				uart1.printf("\r\naccy = %d", tmp[1]);
+				uart1.printf("\r\naccz = %d", tmp[2]);
+				uart1.printf("\r\ntemp = %d", tmp[3]);
+				uart1.printf("\r\ngyrox = %d", tmp[4]);
+				uart1.printf("\r\ngyroy = %d", tmp[5]);
+				uart1.printf("\r\ngyroz = %d", tmp[6]);
+				uart1.printf("\r\n==========");
+
+
+				uart1.printf("\r\ntest0 = %d", AK_tmp[0]);
+				uart1.printf("\r\ntest1 = %d", AK_tmp[1]);
+				uart1.printf("\r\ntest2 = %d", AK_tmp[2]);
+				uart1.printf("\r\n==========");
+				uart1.printf("\r\npitch = %.2f", pitch);
+				uart1.printf("\r\nroll = %.2f", roll);
+				uart1.printf("\r\nyaw = %.2f", yaw);
+				//printf("%.2f\r\n", mpu.invSqrt(0.25f));
+				i = 0;
+			}
+
 			
 			//delay_ms(100);
 			PA8.toggle();//将当前的状态进行翻转 
