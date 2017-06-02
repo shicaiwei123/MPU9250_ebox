@@ -29,8 +29,8 @@ void Mpu9250::begin(uint32_t speed)
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x80);    //复位
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x00);   //唤醒
     i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x01);
-    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x14); //50hz采样
-    i2c->write_byte(SLAVEADDRESS, CONFIG, 0x06);    //10hz滤波
+    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x9); //100hz采样
+    i2c->write_byte(SLAVEADDRESS, CONFIG, 0x07);    //10hz滤波
     i2c->write_byte(SLAVEADDRESS, GYRO_CONFIG, 0x18);
     i2c->write_byte(SLAVEADDRESS, ACCEL_CONFIG, 0x00);//2g
     i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x01); 
@@ -334,103 +334,7 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 	float mx = this->MagFinal.X;
 	float my = this->MagFinal.Y;
 	float mz = this->MagFinal.Z;
-/*
-	float recipNorm;
-	float s0, s1, s2, s3;
-	float qDot1, qDot2, qDot3, qDot4;
-	float hx, hy;
-	float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
-	//float exInt = 0, eyInt = 0, ezInt = 0;//按比例缩小积分误差
-	volatile float beta = betaDef;								// 2 * proportional gain (Kp)
 
-	//四元数变化率
-	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
-	qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
-	qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
-	qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
-	if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
-	{
-
-		// Normalise accelerometer measurement
-		//正常化的加速度测量值
-		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
-		ax *= recipNorm;
-		ay *= recipNorm;
-		az *= recipNorm;
-
-		// Normalise magnetometer measurement
-		//正常化的磁力计测量值
-		recipNorm = invSqrt(mx * mx + my * my + mz * mz);
-		mx *= recipNorm;
-		my *= recipNorm;
-		mz *= recipNorm;
-
-		// Auxiliary variables to avoid repeated arithmetic
-		//辅助变量，避免重复运算
-		_2q0mx = 2.0f * q0 * mx;
-		_2q0my = 2.0f * q0 * my;
-		_2q0mz = 2.0f * q0 * mz;
-		_2q1mx = 2.0f * q1 * mx;
-		_2q0 = 2.0f * q0;
-		_2q1 = 2.0f * q1;
-		_2q2 = 2.0f * q2;
-		_2q3 = 2.0f * q3;
-		_2q0q2 = 2.0f * q0 * q2;
-		_2q2q3 = 2.0f * q2 * q3;
-		q0q0 = q0 * q0;
-		q0q1 = q0 * q1;
-		q0q2 = q0 * q2;
-		q0q3 = q0 * q3;
-		q1q1 = q1 * q1;
-		q1q2 = q1 * q2;
-		q1q3 = q1 * q3;
-		q2q2 = q2 * q2;
-		q2q3 = q2 * q3;
-		q3q3 = q3 * q3;
-
-		// Reference direction of Earth's magnetic field
-		//地球磁场参考方向
-		hx = mx * q0q0 - _2q0my * q3 + _2q0mz * q2 + mx * q1q1 + _2q1 * my * q2 + _2q1 * mz * q3 - mx * q2q2 - mx * q3q3;
-		hy = _2q0mx * q3 + my * q0q0 - _2q0mz * q1 + _2q1mx * q2 - my * q1q1 + my * q2q2 + _2q2 * mz * q3 - my * q3q3;
-		_2bx = sqrt(hx * hx + hy * hy);
-		_2bz = -_2q0mx * q2 + _2q0my * q1 + mz * q0q0 + _2q1mx * q3 - mz * q1q1 + _2q2 * my * q3 - mz * q2q2 + mz * q3q3;
-		_4bx = 2.0f * _2bx;
-		_4bz = 2.0f * _2bz;
-
-		// Gradient decent algorithm corrective step
-		//梯度校正算法
-		s0 = -_2q2 * (2.0f * q1q3 - _2q0q2 - ax) + _2q1 * (2.0f * q0q1 + _2q2q3 - ay) - _2bz * q2 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q3 + _2bz * q1) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q2 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-		s1 = _2q3 * (2.0f * q1q3 - _2q0q2 - ax) + _2q0 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q1 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + _2bz * q3 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q2 + _2bz * q0) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q3 - _4bz * q1) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-		s2 = -_2q0 * (2.0f * q1q3 - _2q0q2 - ax) + _2q3 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q2 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + (-_4bx * q2 - _2bz * q0) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q1 + _2bz * q3) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q0 - _4bz * q2) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-		s3 = _2q1 * (2.0f * q1q3 - _2q0q2 - ax) + _2q2 * (2.0f * q0q1 + _2q2q3 - ay) + (-_4bx * q3 + _2bz * q1) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q0 + _2bz * q2) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q1 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-		recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
-		s0 *= recipNorm;
-		s1 *= recipNorm;
-		s2 *= recipNorm;
-		s3 *= recipNorm;
-
-		// Apply feedback step
-		//应用反馈步骤
-		qDot1 -= beta * s0;
-		qDot2 -= beta * s1;
-		qDot3 -= beta * s2;
-		qDot4 -= beta * s3;
-	}
-
-	// Integrate rate of change of quaternion to yield quaternion
-	//四元数变化率的集成率
-	q0 += qDot1 * (1.0f / sampleFreq);
-	q1 += qDot2 * (1.0f / sampleFreq);
-	q2 += qDot3 * (1.0f / sampleFreq);
-	q3 += qDot4 * (1.0f / sampleFreq);
-
-	// 正常化四元数
-	recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-	q0 *= recipNorm;
-	q1 *= recipNorm;
-	q2 *= recipNorm;
-	q3 *= recipNorm;
-	*/
 	 
 	float recipNorm;
 	float q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
@@ -484,9 +388,10 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 
 		//使用叉积来计算重力和地磁误差。
 			// Error is sum of cross product between estimated direction and measured direction of field vectors
-		ex = (ay * vz - az * vy) + (my * wz - mz * wy);
-		ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
-		ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
+		ex = (ay * vz - az * vy) + (my * wz - mz * wy)/1;
+		ey = (az * vx - ax * vz) + (mz * wx - mx * wz)/1;
+		ez = (ax * vy - ay * vx) + (mx * wy - my * wx)/1;
+		
 		//对误差进行积分
 		exInt += Ki * ex * (1.0f / sampleFreq); // integral error scaled by Ki
 		eyInt += Ki * ey * (1.0f / sampleFreq);
@@ -497,7 +402,7 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 		gy = gy + Kp*ey + eyInt;
 		gz = gz + Kp*ez + ezInt;
 
-       ///*
+       /*
 		qa = q0;
 		qb = q1;
 		qc = q2;
@@ -505,7 +410,8 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 		q1 += (qa * gx + qc * gz - q3 * gy);
 		q2 += (qa * gy - qb * gz + q3 * gx);
 		q3 += (qa * gz + qb * gy - qc * gx);
-		/*
+		*/
+		///*
 		qa = q0;
 		qb = q1;
 		qc = q2;
@@ -513,7 +419,7 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 		q1 += (qa * gx + qc * gz - q3 * gy)*halfT;
 		q2 += (qa * gy - qb * gz + q3 * gx)*halfT;
 		q3 += (qa * gz + qb * gy - qc * gx)*halfT;
-		*/
+		//*/
 		// Normalise quaternion
 		recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
 		q0 *= recipNorm;
@@ -521,96 +427,19 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 		q2 *= recipNorm;
 		q3 *= recipNorm;
 
-		/*
-		float norm;
-		float hx, hy, hz, bx, bz;
-		float vx, vy, vz, wx, wy, wz; //v*当前姿态计算得来的重力在三轴上的分量
-		float ex, ey, ez;
-		float qa, qb,qc;
-
-		// auxiliary variables to reduce number of repeated operations
-		float q0q0 = q0*q0;
-		float q0q1 = q0*q1;
-		float q0q2 = q0*q2;
-		float q0q3 = q0*q3;
-		float q1q1 = q1*q1;
-		float q1q2 = q1*q2;
-		float q1q3 = q1*q3;
-		float q2q2 = q2*q2;
-		float q2q3 = q2*q3;
-		float q3q3 = q3*q3;
-
-		// normalise the measurements
-		norm = sqrt(ax*ax + ay*ay + az*az);
-		ax = ax / norm;
-		ay = ay / norm;
-		az = az / norm;
-		norm = sqrt(mx*mx + my*my + mz*mz);
-		mx = mx / norm;
-		my = my / norm;
-		mz = mz / norm;
-
-		// compute reference direction of magnetic field
-		hx = 2 * mx*(0.5 - q2q2 - q3q3) + 2 * my*(q1q2 - q0q3) + 2 * mz*(q1q3 + q0q2);
-		hy = 2 * mx*(q1q2 + q0q3) + 2 * my*(0.5 - q1q1 - q3q3) + 2 * mz*(q2q3 - q0q1);
-		hz = 2 * mx*(q1q3 - q0q2) + 2 * my*(q2q3 + q0q1) + 2 * mz*(0.5 - q1q1 - q2q2);
-		bx = sqrt((hx*hx) + (hy*hy));
-		bz = hz;
-
-		// estimated direction of gravity and magnetic field (v and w) 
-		//参考坐标n系转化到载体坐标b系的用四元数表示的方向余弦矩阵第三列即是。
-		//处理后的重力分量
-		vx = 2 * (q1q3 - q0q2);
-		vy = 2 * (q0q1 + q2q3);
-		vz = q0q0 - q1q1 - q2q2 + q3q3;
-		//处理后的mag
-		wx = 2 * bx*(0.5 - q2q2 - q3q3) + 2 * bz*(q1q3 - q0q2);
-		wy = 2 * bx*(q1q2 - q0q3) + 2 * bz*(q0q1 + q2q3);
-		wz = 2 * bx*(q0q2 + q1q3) + 2 * bz*(0.5 - q1q1 - q2q2);
-
-		// error is sum of cross product between reference direction of fields and direction measured by sensors 体现在加速计补偿和磁力计补偿，因为仅仅依靠加速计补偿没法修正Z轴的变差，所以还需要通过磁力计来修正Z轴。（公式28）。《四元数解算姿态完全解析及资料汇总》的作者把这部分理解错了，不是什么叉积的差，而叉积的计算就是这样的。计算方法是公式10。
-		ex = (ay*vz - az*vy) + (my*wz - mz*wy);
-		ey = (az*vx - ax*vz) + (mz*wx - mx*wz);
-		ez = (ax*vy - ay*vx) + (mx*wy - my*wx);
-
-		// integral error scaled integral gain 
-		exInt = exInt + ex*Ki* (1.0f / sampleFreq);
-		eyInt = eyInt + ey*Ki* (1.0f / sampleFreq);
-		ezInt = ezInt + ez*Ki* (1.0f / sampleFreq);
-		// adjusted gyroscope measurements
-		//将误差PI后补偿到陀螺仪，即补偿零点漂移。通过调节Kp、Ki两个参数，可以控制加速度计修正陀螺仪积分姿态的速度。（公式16和公式29）
-		gx = gx + Kp*ex + exInt;
-		gy = gy + Kp*ey + eyInt;
-		gz = gz + Kp*ez + ezInt;
-
-		// integrate quaternion rate and normalize
-		//一阶龙格库塔法更新四元数
-		/*
-		qa = q0;
-		qb = q1;
-		qc = q2;
-		q0 += (-qb * gx - qc * gy - q3 * gz)*halfT;
-		q1 += (qa * gx + qc * gz - q3 * gy)*halfT;
-		q2 += (qa * gy - qb * gz + q3 * gx)*halfT;
-		q3 += (qa * gz + qb * gy - qc * gx)*halfT;
-		*/
-		/*
-		q0 = q0 + (-q1*gx - q2*gy - q3*gz)*halfT;
-		q1 = q1 + (q0*gx + q2*gz - q3*gy)*halfT;
-		q2 = q2 + (q0*gy - q1*gz + q3*gx)*halfT;
-		q3 = q3 + (q0*gz + q1*gy - q2*gx)*halfT;
 		
-		// normalise quaternion
-		norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-		q0 = q0 / norm;
-		q1 = q1 / norm;
-		q2 = q2 / norm;
-		q3 = q3 / norm;
-		*/
 		//四元数转换成欧拉角
+		/*
 		Pitch = asin(2 * q0*q2 - 2 * q1*q3) / 3.14 * 180;
 		Roll = atan2(2 * q0*q1 + 2 * q2*q3, 1 - 2 * q1*q1 - 2 * q2*q2) / 3.14 * 180;
 		Yaw = atan2(2 * q0*q3 + 2 * q1*q2, 1 - 2 * q2*q2 - 2 * q3*q3) / 3.14 * 180;
+		*/
+		Pitch = asin(-2 * q1 * q3 + 2 * q0 * q2); //俯仰角，绕y轴转动         
+		Roll = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2* q2 + 1); //滚动角，绕x轴转动
+																				//0.9和0.1是修正系数，其中5.73=0.1*57.3，乘以57.3是为了将弧度转化为角度
+		Yaw = -(0.9 * (-Yaw + gz * 2 * halfT) + 5.73 * atan2(mx*cos(Roll) + my*sin(Roll)*sin(Pitch) + mz*sin(Roll)*cos(Pitch), my*cos(Pitch) - mz*sin(Pitch)));
+		Pitch = Pitch * 57.3;
+		Roll = Roll * 57.3;
 
 	}
 

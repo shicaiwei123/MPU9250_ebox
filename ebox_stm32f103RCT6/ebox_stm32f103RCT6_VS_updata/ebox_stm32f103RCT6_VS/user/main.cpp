@@ -55,8 +55,8 @@ void setup()
 		{
 			i++;
 			count++;
-			if (count == 500)
-				mpu.update_data();
+			//if (count == 500)
+			//	mpu.update_data();
 			mpu.AHRS_Dataprepare();
 			mpu.get_data_buf(tmp, AK_tmp);
 			//mpu.get_data_adc(tmp_adc, AK_tmp_adc);

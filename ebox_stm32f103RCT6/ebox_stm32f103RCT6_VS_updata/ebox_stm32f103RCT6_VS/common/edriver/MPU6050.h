@@ -99,10 +99,10 @@
 #define MAG_TEST1           0x0D
 //AHRS算法数据
 #define betaDef		0.2f		// 2 * proportional gain
-#define sampleFreq	50.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
-#define Kp 0.6f	//比例增益支配收敛率accellrometer/magnetometer
-#define Ki 0.001f //积分增益执行速率陀螺仪的衔接gyroscopeases
-#define halfT 0.0025f//采样周期的一半，若周期为10ms,则一般为0.005s
+#define sampleFreq	100.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
+#define Kp 2.3f	//比例增益支配收敛率accellrometer/magnetometer           //0.6 0.7       2.5
+#define Ki 0.005f //积分增益执行速率陀螺仪的衔接gyroscopeases           //0.002  0.004   0.005
+#define halfT 0.32f//采样周期的一半，若周期为10ms,则一般为0.005s        // 1      1      0.2
 
 //传感器原始数据
 typedef struct  sensor_data
