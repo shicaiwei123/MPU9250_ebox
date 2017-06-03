@@ -99,11 +99,12 @@
 #define MAG_TEST1           0x0D
 //AHRS算法数据
 #define betaDef		0.2f		// 2 * proportional gain
-#define sampleFreq	100.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
-#define Kp 2.3f	//比例增益支配收敛率accellrometer/magnetometer           //0.6 0.7       2.5
-#define Ki 0.005f //积分增益执行速率陀螺仪的衔接gyroscopeases           //0.002  0.004   0.005
-#define halfT 0.32f//采样周期的一半，若周期为10ms,则一般为0.005s        // 1      1      0.2
-
+/*
+#define sampleFreq	125.0f		// sample frequency in Hz  采样率 100 HZ  10ms  修改此频率可增加变化速度
+#define Kp 2.25f	//比例增益支配收敛率accellrometer/magnetometer           //0.6 0.7       2.5
+#define Ki 0.0055f //积分增益执行速率陀螺仪的衔接gyroscopeases           //0.002  0.004   0.005
+#define halfT 0.004f//采样周期的一半，若周期为10ms,则一般为0.005s        // 1      1      0.2
+*/
 //传感器原始数据
 typedef struct  sensor_data
 {
@@ -122,6 +123,8 @@ typedef struct  imu_data
 class Mpu9250
 {
 public:
+	float sample;   //采样率
+
 	Mpu9250(I2c *i2c)
     {
         this->i2c = i2c;
@@ -149,6 +152,7 @@ private:
     uint32_t    speed;
 	u8 salve_flag;
 	u8 salve_adress;
+
 };
 
 #endif
@@ -185,6 +189,10 @@ public:
 	void update_data(void);
 	//快速逆平方根
 	float invSqrt(float x);
+	//参数设置，方便调参数
+	void set_parameter(float m_kp, float m_ki, float m_sample);
+	//参数大洋，验证参数设置正确与否:比例系数，微分系数，采样率，采样率对应的寄存器设置参数，采样周期的一半
+	void get_parameter(float *m_kp, float *m_ki, float *m_samplefreq, uint8_t *sampleH, float *m_halfT);
 private:
 
 
@@ -214,4 +222,7 @@ private:
 
 	   float q0 , q1  , q2 , q3;	// quaternion of sensor frame relativ
 	   float exInt, eyInt, ezInt;
+	   float Ki, Kp;
+	   float halfT;
+	   float  sampleFreq;
 };

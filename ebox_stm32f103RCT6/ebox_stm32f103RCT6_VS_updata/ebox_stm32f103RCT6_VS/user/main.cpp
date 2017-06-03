@@ -20,6 +20,7 @@ void setup()
 {    
 	ebox_init();
 	uart1.begin(115200);
+	mpu.set_parameter(2.3f, 0.005, 120);
 	mpu.begin(400000);
 	PA8.mode(OUTPUT_PP);
 	uart1.printf("intial....");
@@ -51,8 +52,12 @@ void setup()
 		setup();
 		count = 0;
 		int i=0;
+		uint64_t time;
+		float ki, kp, sample, halfT;
+		uint8_t  sampleH;
 		while (1)
 		{
+			time = millis();
 			i++;
 			count++;
 			//if (count == 500)
@@ -61,56 +66,29 @@ void setup()
 			mpu.get_data_buf(tmp, AK_tmp);
 			//mpu.get_data_adc(tmp_adc, AK_tmp_adc);
 			//mpu.get_data_q(q);
-			mpu.AHRSupdate();
+		    mpu.AHRSupdate();
 			mpu.get_data_ahrs(&pitch, &roll, &yaw);
-
-
-			/*
-			mpu.mode(MPU6500);
-			mpu.get_id(&id);
-			mpu.get_data(ACCEL_XOUT_H, tmp, 7);
-			delay_ms(10);
-			mpu.mode(AK8963);
-			delay_ms(10);
-			mpu.get_id(&AK_id);
-			mpu.write_data(MAG_CNTL1, 0x11);
-			mpu.write_data(MAG_TEST1, 0x08);
-			//mpu.get_data(RA_MAG_XOUT_L, AK_tmp, 1);
-			uart1.printf("\r\nmag = %d", id);
-			uart1.printf("\r\nAK_ID = %d", AK_id);
+			mpu.get_parameter(&kp, &ki, &sample, &sampleH, &halfT);
+			
 
 			
-			AK_tmp[0] = mpu.get_data_2byte(RA_MAG_XOUT_L);
-			AK_tmp[1] = mpu.get_data_2byte(RA_MAG_YOUT_L);
-			AK_tmp[2] = mpu.get_data_2byte(RA_MAG_ZOUT_L);
-			mpu.get_data_2byte(RA_MAG_ST2);
+			/*
+			uart1.printf("\r\nkp = %.5f", kp);
+			uart1.printf("\r\nki = %.5f", ki);
+			uart1.printf("\r\nsample = %.1f", sample);
+			uart1.printf("\r\nsampleH = %x", sampleH);
+			uart1.printf("\r\nhalfT = %.5f", halfT);
+			uart1.printf("\r\n==========");
 			*/
-			
-
-			
 			/*
-			uart1.printf("\r\naccx_adc = %.1f", tmp_adc[0]);
-			uart1.printf("\r\naccy_adc = %.1f", tmp_adc[1]);
-			uart1.printf("\r\naccz_adc = %.1f", tmp_adc[2]);
-			uart1.printf("\r\ntemp_adc = %.1f", tmp_adc[3]);
-			uart1.printf("\r\ngyrox_adc = %.1f", tmp_adc[4]);
-			uart1.printf("\r\ngyroy_adc = %.1f", tmp_adc[5]);
-			uart1.printf("\r\ngyroz_adc = %.1f", tmp_adc[6]);
-			uart1.printf("\r\n==========");
-
-			uart1.printf("\r\ntest0_adc = %.1f", AK_tmp_adc[0]);
-			uart1.printf("\r\ntest1_adc = %.1f", AK_tmp_adc[1]);
-			uart1.printf("\r\ntest2_adc = %.1f", AK_tmp_adc[2]);
-			uart1.printf("\r\n==========");
-			
-			
 		//	uart1.printf("\r\ntest3 = %d", AK_test[3]);
 			uart1.printf("\r\nq0 = %.1f", q[0]);
 			uart1.printf("\r\nq1 = %.1f", q[1]);
 			uart1.printf("\r\nq2 = %.1f", q[2]);
 			uart1.printf("\r\nq3 = %.1f", q[3]);
 			*/
-			if (i == 8)
+			///*
+			if (i == 20)
 			{
 				uart1.printf("\r\naccx = %d", tmp[0]);
 				uart1.printf("\r\naccy = %d", tmp[1]);
@@ -132,9 +110,11 @@ void setup()
 				//printf("%.2f\r\n", mpu.invSqrt(0.25f));
 				i = 0;
 			}
-
+		//	*/
 			
 			//delay_ms(100);
+			delay_us(4500);
+			//uart1.printf("fps:%.1f\t", 1.0 / (millis() - time) * 1000);
 			PA8.toggle();//将当前的状态进行翻转 
 			/*
 			AK_test[0] = mpu.get_data_2byte(RA_MAG_XOUT_L);

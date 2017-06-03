@@ -29,7 +29,7 @@ void Mpu9250::begin(uint32_t speed)
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x80);    //复位
 	i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x00);   //唤醒
     i2c->write_byte(SLAVEADDRESS, PWR_MGMT_1, 0x01);
-    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, 0x9); //100hz采样
+    i2c->write_byte(SLAVEADDRESS, SMPLRT_DIV, sample); //166hz采样
     i2c->write_byte(SLAVEADDRESS, CONFIG, 0x07);    //10hz滤波
     i2c->write_byte(SLAVEADDRESS, GYRO_CONFIG, 0x18);
     i2c->write_byte(SLAVEADDRESS, ACCEL_CONFIG, 0x00);//2g
@@ -159,9 +159,9 @@ int Mpu9250_Ahrs::Get_MPU9250_Data(void)
 		this->get_data(ACCEL_XOUT_H, temp, 7);
 	else
 		return -1;
-	delay_ms(10);
+	delay_us(100);
 	this->mode(AK8963);
-	delay_ms(10);
+	delay_ms(1);
 	this->get_id(&AK_id);
 	if (AK_id == 0x48)
 		this->write_data(MAG_CNTL1, 0x11);
@@ -186,6 +186,7 @@ int Mpu9250_Ahrs::Get_MPU9250_Data(void)
 	this->Magbuf.X = AK_temp[0];
 	this->Magbuf.Y = AK_temp[1];
 	this->Magbuf.Z = AK_temp[2];
+	
 	return 0;
 }
 
@@ -202,7 +203,7 @@ void Mpu9250_Ahrs::get_data_buf(int16_t *mpu, int16_t *AK)
 	*AK++ = this->Magbuf.X;
 	*AK++ = this->Magbuf.Y;
 	*AK   = this->Magbuf.Z;
-
+	
 }
 
 void Mpu9250_Ahrs::AHRS_Dataprepare()
@@ -429,22 +430,40 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 
 		
 		//四元数转换成欧拉角
-		/*
+	//	/*
 		Pitch = asin(2 * q0*q2 - 2 * q1*q3) / 3.14 * 180;
 		Roll = atan2(2 * q0*q1 + 2 * q2*q3, 1 - 2 * q1*q1 - 2 * q2*q2) / 3.14 * 180;
 		Yaw = atan2(2 * q0*q3 + 2 * q1*q2, 1 - 2 * q2*q2 - 2 * q3*q3) / 3.14 * 180;
-		*/
+	//	*/
+		/*
 		Pitch = asin(-2 * q1 * q3 + 2 * q0 * q2); //俯仰角，绕y轴转动         
 		Roll = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2* q2 + 1); //滚动角，绕x轴转动
 																				//0.9和0.1是修正系数，其中5.73=0.1*57.3，乘以57.3是为了将弧度转化为角度
-		Yaw = -(0.9 * (-Yaw + gz * 2 * halfT) + 5.73 * atan2(mx*cos(Roll) + my*sin(Roll)*sin(Pitch) + mz*sin(Roll)*cos(Pitch), my*cos(Pitch) - mz*sin(Pitch)));
+		Yaw = -(0.85 * (-Yaw + gz * 2 * halfT) + 0.15*57.3 * atan2(mx*cos(Roll) + my*sin(Roll)*sin(Pitch) + mz*sin(Roll)*cos(Pitch), my*cos(Pitch) - mz*sin(Pitch)));
 		Pitch = Pitch * 57.3;
 		Roll = Roll * 57.3;
-
+		*/
 	}
 
 }
+void Mpu9250_Ahrs::set_parameter(float m_kp, float m_ki, float m_sample)
+{
+	Kp = m_kp;;
+	Ki = m_ki;
+	sampleFreq = m_sample;
+	sample = int(1000/m_sample-1);
+	halfT = 1 / (2 * m_sample);
+}
 
+void Mpu9250_Ahrs::get_parameter(float *m_kp, float *m_ki, float *m_samplefreq, uint8_t *sampleH, float *m_halfT)
+{
+	*m_kp = this->Kp;
+	*m_ki = this->Ki;
+	*m_samplefreq = this->sampleFreq;
+	*sampleH = this->sample;
+	*m_halfT = halfT;
+
+}
 void Mpu9250_Ahrs::get_data_ahrs(float *m_Pitch, float *m_Roll, float *m_Yaw)
 {
 	*m_Pitch = Pitch-Pitch_off;
