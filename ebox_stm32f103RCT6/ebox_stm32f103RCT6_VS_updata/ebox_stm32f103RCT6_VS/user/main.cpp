@@ -60,7 +60,7 @@ void setup()
 			time = millis();
 			i++;
 			count++;
-			//if (count == 500)
+			//if (count == 100)
 			//	mpu.update_data();
 			mpu.AHRS_Dataprepare();
 			mpu.get_data_buf(tmp, AK_tmp);

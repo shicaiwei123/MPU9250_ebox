@@ -430,19 +430,19 @@ void Mpu9250_Ahrs::AHRSupdate(void)
 
 		
 		//四元数转换成欧拉角
-	//	/*
+		/*
 		Pitch = asin(2 * q0*q2 - 2 * q1*q3) / 3.14 * 180;
 		Roll = atan2(2 * q0*q1 + 2 * q2*q3, 1 - 2 * q1*q1 - 2 * q2*q2) / 3.14 * 180;
 		Yaw = atan2(2 * q0*q3 + 2 * q1*q2, 1 - 2 * q2*q2 - 2 * q3*q3) / 3.14 * 180;
-	//	*/
-		/*
+		*/
+	//	/*
 		Pitch = asin(-2 * q1 * q3 + 2 * q0 * q2); //俯仰角，绕y轴转动         
 		Roll = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2* q2 + 1); //滚动角，绕x轴转动
 																				//0.9和0.1是修正系数，其中5.73=0.1*57.3，乘以57.3是为了将弧度转化为角度
 		Yaw = -(0.85 * (-Yaw + gz * 2 * halfT) + 0.15*57.3 * atan2(mx*cos(Roll) + my*sin(Roll)*sin(Pitch) + mz*sin(Roll)*cos(Pitch), my*cos(Pitch) - mz*sin(Pitch)));
 		Pitch = Pitch * 57.3;
 		Roll = Roll * 57.3;
-		*/
+	//	*/
 	}
 
 }
@@ -481,7 +481,7 @@ void Mpu9250_Ahrs::get_data_q(float *q)
 
 void Mpu9250_Ahrs::update_data(void)
 {
-	this->Pitch_off = Pitch;
-	this->Roll_off = Roll;
+	//this->Pitch_off = Pitch;
+	//this->Roll_off = Roll;
 	this->Yaw_off = Yaw;
 }
