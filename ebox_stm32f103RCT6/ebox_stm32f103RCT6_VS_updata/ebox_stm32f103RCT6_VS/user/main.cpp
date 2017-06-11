@@ -14,18 +14,21 @@
 
 #include "ebox.h" 
 #include "MPU6050.h"
+#include "uart_vcan.h"
 //Mpu9250 mpu(&i2c1);
-Mpu9250_Ahrs mpu(&i2c1);
+Mpu9250_Ahrs mpu(&si2c1);
+UartVscan uartv(&uart1);
 void setup() 
 {    
 	ebox_init();
 	uart1.begin(115200);
-	mpu.set_parameter(2.3f, 0.005, 120);
+	uartv.begin(115200);
+	mpu.set_parameter(10.3f, 0.008, 125);
 	mpu.begin(400000);
 	PA8.mode(OUTPUT_PP);
-	uart1.printf("intial....");
-	mpu.Acc_Correct();
-	mpu.Gyro_Correct();
+	//uart1.printf("intial....");
+	mpu.acc_correct();
+	mpu.gyro_correct();
 //	mpu.Mag_Correct();
 	
 }
@@ -62,11 +65,11 @@ void setup()
 			count++;
 			//if (count == 100)
 			//	mpu.update_data();
-			mpu.AHRS_Dataprepare();
+			mpu.ahrs_dataprepare();
 			mpu.get_data_buf(tmp, AK_tmp);
 			//mpu.get_data_adc(tmp_adc, AK_tmp_adc);
 			//mpu.get_data_q(q);
-		    mpu.AHRSupdate();
+		    mpu.ahrs_update();
 			mpu.get_data_ahrs(&pitch, &roll, &yaw);
 			mpu.get_parameter(&kp, &ki, &sample, &sampleH, &halfT);
 			
@@ -88,8 +91,9 @@ void setup()
 			uart1.printf("\r\nq3 = %.1f", q[3]);
 			*/
 			///*
-			if (i == 20)
+			if (i == 3)
 			{
+				/*
 				uart1.printf("\r\naccx = %d", tmp[0]);
 				uart1.printf("\r\naccy = %d", tmp[1]);
 				uart1.printf("\r\naccz = %d", tmp[2]);
@@ -99,7 +103,7 @@ void setup()
 				uart1.printf("\r\ngyroz = %d", tmp[6]);
 				uart1.printf("\r\n==========");
 
-
+				*/
 				uart1.printf("\r\ntest0 = %d", AK_tmp[0]);
 				uart1.printf("\r\ntest1 = %d", AK_tmp[1]);
 				uart1.printf("\r\ntest2 = %d", AK_tmp[2]);
@@ -107,6 +111,10 @@ void setup()
 				uart1.printf("\r\npitch = %.2f", pitch);
 				uart1.printf("\r\nroll = %.2f", roll);
 				uart1.printf("\r\nyaw = %.2f", yaw);
+				uart1.printf("\r\n pitch=%.2f", pitch);
+				uart1.printf("\r\n roll=%.2f", roll);
+				//uartv.sendOscilloscope(pitch);
+				//uartv.sendOscilloscope(roll);
 				//printf("%.2f\r\n", mpu.invSqrt(0.25f));
 				i = 0;
 			}
