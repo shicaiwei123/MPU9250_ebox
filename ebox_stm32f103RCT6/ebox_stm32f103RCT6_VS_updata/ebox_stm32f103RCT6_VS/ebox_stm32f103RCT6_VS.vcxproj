@@ -77,6 +77,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\..\updata model\ebox_stm32f103RCT6_VS\ebox_stm32f103RCT6_VS\common\util\my_math.cpp" />
     <ClCompile Include="AK8963.cpp" />
     <ClCompile Include="common\edriver\74HC595.cpp" />
     <ClCompile Include="common\edriver\at24c02.cpp" />
@@ -87,6 +88,8 @@
     <ClCompile Include="common\edriver\ds18b20.cpp" />
     <ClCompile Include="common\edriver\DS3231.cpp" />
     <ClCompile Include="common\edriver\encoder.cpp" />
+    <ClCompile Include="common\edriver\encoder_motor.cpp" />
+    <ClCompile Include="common\edriver\encoder_timer.cpp" />
     <ClCompile Include="common\edriver\fm25v.cpp" />
     <ClCompile Include="common\edriver\FT800.cpp" />
     <ClCompile Include="common\edriver\GP2Y1051.cpp" />
@@ -108,7 +111,9 @@
     <ClCompile Include="common\edriver\OLED.cpp" />
     <ClCompile Include="common\edriver\OLED_ssd1306.cpp" />
     <ClCompile Include="common\edriver\parallel_gpio.cpp" />
+    <ClCompile Include="common\edriver\PID.cpp" />
     <ClCompile Include="common\edriver\si4432.cpp" />
+    <ClCompile Include="common\edriver\tb6612fng.cpp" />
     <ClCompile Include="common\edriver\TM1638.cpp" />
     <ClCompile Include="common\edriver\uart_string.cpp" />
     <ClCompile Include="common\edriver\uart_vcan.cpp" />
@@ -194,11 +199,13 @@
     <ClCompile Include="user\tsl1401.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\..\updata model\ebox_stm32f103RCT6_VS\ebox_stm32f103RCT6_VS\common\util\my_math.h" />
     <ClInclude Include="AK8963.h" />
     <ClInclude Include="common\bigiot\bigiot.h" />
     <ClInclude Include="common\bigiot\bigiot_port.h" />
     <ClInclude Include="common\cJSON\cJSON.h" />
     <ClInclude Include="common\edriver\74HC595.h" />
+    <ClInclude Include="common\edriver\accurate_pwm.h" />
     <ClInclude Include="common\edriver\at24c02.h" />
     <ClInclude Include="common\edriver\at45db.h" />
     <ClInclude Include="common\edriver\Button.h" />
@@ -207,6 +214,9 @@
     <ClInclude Include="common\edriver\ds18b20.h" />
     <ClInclude Include="common\edriver\DS3231.h" />
     <ClInclude Include="common\edriver\encoder.h" />
+    <ClInclude Include="common\edriver\encoder_exti.h" />
+    <ClInclude Include="common\edriver\encoder_motor.h" />
+    <ClInclude Include="common\edriver\encoder_timer.h" />
     <ClInclude Include="common\edriver\fm25v.h" />
     <ClInclude Include="common\edriver\font.h" />
     <ClInclude Include="common\edriver\FT800.h" />
@@ -224,17 +234,21 @@
     <ClInclude Include="common\edriver\Max7456.h" />
     <ClInclude Include="common\edriver\mmc_sd.h" />
     <ClInclude Include="common\edriver\MPU6050.h" />
+    <ClInclude Include="common\edriver\mpu9250.h" />
     <ClInclude Include="common\edriver\Nokia5110.h" />
     <ClInclude Include="common\edriver\NRF24L01.h" />
     <ClInclude Include="common\edriver\OLED.h" />
     <ClInclude Include="common\edriver\OLED_ssd1306.h" />
     <ClInclude Include="common\edriver\parallel_gpio.h" />
+    <ClInclude Include="common\edriver\PID.hpp" />
     <ClInclude Include="common\edriver\si4432.h" />
+    <ClInclude Include="common\edriver\tb6612fng.h" />
     <ClInclude Include="common\edriver\TM1638.h" />
     <ClInclude Include="common\edriver\uart_num.h" />
     <ClInclude Include="common\edriver\uart_string.h" />
     <ClInclude Include="common\edriver\uart_vcan.h" />
     <ClInclude Include="common\edriver\ultrasonic_wave.h" />
+    <ClInclude Include="common\edriver\ultrasonic_wave_uart.h" />
     <ClInclude Include="common\edriver\w25x16.h" />
     <ClInclude Include="common\edriver\w5500.h" />
     <ClInclude Include="common\edriver\ws2812.h" />
@@ -363,6 +377,7 @@
     <ClInclude Include="mcu\stm32f10x\libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_tim.h" />
     <ClInclude Include="mcu\stm32f10x\libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_usart.h" />
     <ClInclude Include="mcu\stm32f10x\libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_wwdg.h" />
+    <ClInclude Include="mpu9250.h" />
     <ClInclude Include="os\ebox_os\cpu.h" />
     <ClInclude Include="os\ebox_os\os.h" />
     <ClInclude Include="os\FreeRTOS\Source\include\croutine.h" />
