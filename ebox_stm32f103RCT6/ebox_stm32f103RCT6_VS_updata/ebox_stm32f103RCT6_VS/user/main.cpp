@@ -24,7 +24,7 @@ void setup()
 //	uartv.begin(115200);   //山外调试助手
 	mpu.begin(400000);
 	uart1.begin(115200);
-	mpu.setParameter(10.3f, 0.008, 125);
+	mpu.setParameter(11.3f, 0.008, 500,100);//SOFT:1000-125hz,100-142hz,1-142~162波动   硬件I2C:100-500,1000-250~333hz,
 	PA8.mode(OUTPUT_PP);
 	uart1.printf("intial....");
 	mpu.accCorrect();
@@ -79,20 +79,20 @@ void setup()
 				uart1.printf("\r\nmz= %d", AK_tmp[2]);
 				uart1.printf("\r\n==========");
 				*/
-				uart1.printf("\r\npitch = %.2f", pitch);
-				uart1.printf("\r\nroll = %.2f", roll);
-				uart1.printf("\r\nyaw = %.2f", yaw);
-				//uart1.printf("\r\n pitch=%.2f", pitch);
-				//uart1.printf("\r\n roll=%.2f", roll);
-				//uartv.sendOscilloscope(pitch);
-				//uartv.sendOscilloscope(roll);
+				//uart1.printf("\r\npitch = %.2f", pitch);
+				//uart1.printf("\r\nroll = %.2f", roll);
+				//uart1.printf("\r\nyaw = %.2f", yaw);
+				
+				uartv.sendOscilloscope(pitch);
+				uartv.sendOscilloscope(roll);
 				i = 0;
 			}
 		//	*/
 			
 			//delay_ms(100);
-			delay_us(4500);
-			//uart1.printf("fps:%.1f\t", 1.0 / (millis() - time) * 1000);
+			//delay_us(5000);
+		
+			uart1.printf("fps:%.1f\t", 1.0 / (millis() - time) * 1000);
 			PA8.toggle();//将当前的状态进行翻转 
  
 		}

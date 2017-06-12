@@ -129,7 +129,7 @@ public:
 	{
 		i2c = m_i2c;
 	}
-	void        begin(uint32_t speed);
+	void        begin(uint32_t speed=1);
 	//设定模式
 	void        mode(u8 mode);
 	int16_t 	getData2byte(uint8_t reg_address);
@@ -152,6 +152,7 @@ private:
 	uint32_t   speed;
 	u8 salve_flag;
 	u8 salve_adress;
+	
 
 };
 
@@ -162,39 +163,55 @@ class Mpu9250Ahrs :public Mpu9250<T>
 {
 public:
 	//构造函数
-	//Mpu9250Ahrs(SoftI2c *si2c);
 	Mpu9250Ahrs(T *i2c);
-//	void begin(uint_t64 speed);    //覆盖Mpu9250的begin函数
+
+   //	void begin(uint_t64 speed);    //覆盖Mpu9250的begin函数
+
+	//设置刷新率
+	void setTime(uint16_t mtime);
+
 	//原始数据获取，不成功返回-1.-2。成功没有设定返回值，未知返回值
 	int getMpu9250Data(void);
+
 	//测试函数：测试初始数据是否成功获取
 	void getDataBuf(int16_t *mpu, int16_t *AK);
 
 	//ADC转换，将ADC数据转换为直观数据
 	void ahrsDataPrepare(void);
+
 	//ADC数据转换测试
 	void getDataAdc(float *mpu, float *AK);
+
 	//加速度计校正
 	void accCorrect(void);
+
 	//陀螺仪校正
 	void gyroCorrect(void);
+
 	//磁力计校正
-	void magCorrect(void);
+	void magCorrect(float x,float y);
+
 	//姿态解算得出欧拉角，从外部传入参数
 	void ahrsUpdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
+	
 	//调用内部参数
 	void ahrsUpdate(void);
+
 	//获取欧拉角
 	void getDataAhrs(float *Pitch, float *Roll, float *Yaw);
+
 	//测试代码：测试q0,q1,q2,q3
 	void getDataQ(float *q);
-	void updateData(void);
+
 	//快速逆平方根
 	float invSqrt(float x);
+
 	//参数设置，方便调参数
-	void setParameter(float m_kp, float m_ki, float m_sample);
+	void setParameter(float m_kp, float m_ki, float m_sample,uint16_t mtime);
+
 	//参数验证，验证参数设置正确与否:比例系数，微分系数，采样率，采样率对应的寄存器设置参数，采样周期的一半
 	void getParameter(float *m_kp, float *m_ki, float *m_samplefreq, uint8_t *sampleH, float *m_halfT);
+
 private:
 	//处理前数据
 	SENSOR_DATA Gyrobuf;//陀螺仪
@@ -225,6 +242,9 @@ private:
 	float halfT;
 	float  sampleFreq;
 	T *i2c;
+	uint16_t time;
+	float mx;
+	float my;
 };
 
 
@@ -349,25 +369,10 @@ void Mpu9250<T>::mode(u8 mode)
 
 
 }
-/*
-/*
-//将参数传给基类
-template<typename T>
-Mpu9250Ahrs<T>::Mpu9250Ahrs::Mpu9250Ahrs(SoftI2c *i2c) :Mpu9250<T>::Mpu9250(i2c)
-{
-q0 = 1.0f;
-q1 = 0.0f;
-q2 = 0.0f;
-q3 = 0.0f;
-Pitch_off = 0.00f;
-Roll_off = 0.00f;
-Yaw_off = 0.00f;
-exInt = 0;
-eyInt = 0;
-ezInt = 0;
 
-}
-*/
+
+
+//将参数传给基类
 template<typename T>
 Mpu9250Ahrs<T>::Mpu9250Ahrs(T *i2c):Mpu9250<T>(i2c)
 {
@@ -382,10 +387,18 @@ Yaw_off = 0.00f;
 exInt = 0;
 eyInt = 0;
 ezInt = 0;
+time = 1000;
+mx = 24.905;
+my = 15.647;
 
 }
 
 
+template<typename T>
+void Mpu9250Ahrs<T>::setTime(uint16_t mtime)
+{
+	time = mtime;
+}
 template<typename T>
 int Mpu9250Ahrs<T>::getMpu9250Data(void)
 {
@@ -397,31 +410,32 @@ int16_t AK_temp[3];
 this->mode(MPU6500);
 this->getId(&id);
 if (id == 0x73)
-{
-temp[0] = this->getData2byte(ACCEL_XOUT_H);
-temp[1] = this->getData2byte(ACCEL_YOUT_H);
-temp[2] = this->getData2byte(ACCEL_ZOUT_H);
-temp[4] = this->getData2byte(GYRO_XOUT_H);
-temp[5] = this->getData2byte(GYRO_YOUT_H);
-temp[6] = this->getData2byte(GYRO_ZOUT_H);
-}
+	{
+		this->Accbuf.X = this->getData2byte(ACCEL_XOUT_H);
+		this->Accbuf.Y = this->getData2byte(ACCEL_YOUT_H);
+		this->Accbuf.Z = this->getData2byte(ACCEL_ZOUT_H);
+		this->Gyrobuf.X = this->getData2byte(GYRO_XOUT_H);
+		this->Gyrobuf.Y = this->getData2byte(GYRO_YOUT_H);
+		this->Gyrobuf.Z = this->getData2byte(GYRO_ZOUT_H);
+	}
 
 else
-return -1;
-delay_us(100);
+    return -1;
+//delay_us(100);
 this->mode(AK8963);
-delay_ms(1);
+  delay_us(time);
 this->getId(&AK_id);
 if (AK_id == 0x48)
 this->writeData(MAG_CNTL1, 0x11);
 else
 return -2;
 this->writeData(MAG_TEST1, 0x08);
-AK_temp[0] = this->getData2byte(RA_MAG_XOUT_L);
-AK_temp[1] = this->getData2byte(RA_MAG_YOUT_L);
-AK_temp[2] = this->getData2byte(RA_MAG_ZOUT_L);
+   this->Magbuf.X = this->getData2byte(RA_MAG_XOUT_L) + 65;
+   this->Magbuf.Y = this->getData2byte(RA_MAG_YOUT_L) - 65;
+   this->Magbuf.Z = this->getData2byte(RA_MAG_ZOUT_L);
 this->getData2byte(RA_MAG_ST2);
 
+/*
 //数据传入
 //加速度
 this->Accbuf.X = temp[0];
@@ -440,7 +454,7 @@ this->Magbuf.X = AK_temp[0] + 65;
 this->Magbuf.Y = AK_temp[1] - 65;
 //this->Magbuf.Y = AK_temp[1]-70;
 this->Magbuf.Z = AK_temp[2];
-
+*/
 return 0;
 }
 
@@ -479,13 +493,14 @@ AccFinal.Z = (float)((Accbuf.Z - Accoffset.Z)*0.061)*0.0098;
 
 //±4800uT 2^16/9600 = 6.83lsb/uT     1/6.83 = 0.1465
 //地磁强度为 5-6 x 10^(-5) T = 50 - 60 uT
-MagFinal.X = (float)(Magbuf.X - Magoffset.X)*0.1465;
-MagFinal.Y = (float)(Magbuf.Y - Magoffset.Y)*0.1465;
+MagFinal.X = (float)(Magbuf.X - Magoffset.X)*0.1465 - mx;
+MagFinal.Y = (float)(Magbuf.Y - Magoffset.Y)*0.1465 - my;
 MagFinal.Z = (float)(Magbuf.Z - Magoffset.Z)*0.1465;
-
-MagFinal.X = MagFinal.X - 24.905;
-MagFinal.Y = MagFinal.Y - 14.647;
+/*
+MagFinal.X = MagFinal.X 
+MagFinal.Y = MagFinal.Y 
 MagFinal.Z = MagFinal.Z;
+*/
 }
 
 template<typename T>
@@ -536,26 +551,10 @@ Gyrooffset.Z = Gyroz / numGyro;
 }
 
 template<typename T>
-void Mpu9250Ahrs<T>::magCorrect()
+void Mpu9250Ahrs<T>::magCorrect(float x, float y)
 {
-unsigned char i = 0;
-unsigned char numMag = 100;
-int Magx = 0;
-int Magy = 0;
-int Magz = 0;							  //磁力计校正中间变量
-
-for (i = 0; i<numMag; i++)
-{
-getMpu9250Data();
-Magx += Magbuf.X;
-Magy += Magbuf.Y;
-Magz += Magbuf.Z;
-delay_ms(2);
-}
-
-Magoffset.X = Magx / numMag;
-Magoffset.Y = Magy / numMag;
-Magoffset.Z = Magz / numMag;
+	mx = x;
+	my = y;
 }
 
 template<typename T>
@@ -833,13 +832,14 @@ Roll = Roll * 57.3;
 }
 
 template<typename T>
-void Mpu9250Ahrs<T>::setParameter(float m_kp, float m_ki, float m_sample)
+void Mpu9250Ahrs<T>::setParameter(float m_kp, float m_ki, float m_sample,uint16_t mtime)
 {
 Kp = m_kp;;
 Ki = m_ki;
 sampleFreq = m_sample;
 Mpu9250<T>::sample = int(1000 / m_sample - 1);
 halfT = 1 / (2 * m_sample);
+time = mtime;
 }
 
 template<typename T>
@@ -872,7 +872,7 @@ void Mpu9250Ahrs<T>::getDataQ(float *q)
 *q = q3;
 }
 
-
+/*
 template<typename T>
 void Mpu9250Ahrs<T>::updateData(void)
 {
@@ -880,3 +880,4 @@ void Mpu9250Ahrs<T>::updateData(void)
 //this->Roll_off = Roll;
 this->Yaw_off = Yaw;
 }
+*/
