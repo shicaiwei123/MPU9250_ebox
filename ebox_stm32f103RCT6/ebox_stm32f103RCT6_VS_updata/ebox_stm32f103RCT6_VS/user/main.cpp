@@ -24,11 +24,11 @@ void setup()
 //	uartv.begin(115200);   //山外调试助手
 	mpu.begin(400000);
 	uart1.begin(115200);
-	mpu.setParameter(11.3f, 0.008, 500,100);//SOFT:1000-125hz,100-142hz,1-142~162波动   硬件I2C:100-500,1000-250~333hz,
+	//mpu.setParameter(11.3f, 0.008, 500,100);//SOFT:1000-125hz,100-142hz,10-142~162波动   硬件I2C:100-500,1000-250~333hz,
 	PA8.mode(OUTPUT_PP);
 	uart1.printf("intial....");
-	mpu.accCorrect();
-	mpu.gyroCorrect();
+	//mpu.accCorrect();
+	//mpu.gyroCorrect();
 }
 	int16_t tmp[7];
 	int16_t AK_tmp[3];
@@ -79,12 +79,12 @@ void setup()
 				uart1.printf("\r\nmz= %d", AK_tmp[2]);
 				uart1.printf("\r\n==========");
 				*/
-				//uart1.printf("\r\npitch = %.2f", pitch);
-				//uart1.printf("\r\nroll = %.2f", roll);
-				//uart1.printf("\r\nyaw = %.2f", yaw);
+				uart1.printf("\r\npitch = %.2f", pitch);
+				uart1.printf("\r\nroll = %.2f", roll);
+				uart1.printf("\r\nyaw = %.2f", yaw);
 				
-				uartv.sendOscilloscope(pitch);
-				uartv.sendOscilloscope(roll);
+				//uartv.sendOscilloscope(pitch);
+				//uartv.sendOscilloscope(roll);
 				i = 0;
 			}
 		//	*/

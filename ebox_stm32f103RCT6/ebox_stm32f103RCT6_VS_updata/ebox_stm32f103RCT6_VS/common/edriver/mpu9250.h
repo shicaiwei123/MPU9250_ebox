@@ -167,7 +167,7 @@ public:
 
    //	void begin(uint_t64 speed);    //覆盖Mpu9250的begin函数
 
-	//设置刷新率
+	//设置刷新率,SOFT:1000-125hz,100-142hz,10-142~162波动   硬件I2C:100-500,1000-250~333hz,
 	void setTime(uint16_t mtime);
 
 	//原始数据获取，不成功返回-1.-2。成功没有设定返回值，未知返回值
@@ -390,10 +390,9 @@ ezInt = 0;
 time = 1000;
 mx = 24.905;
 my = 15.647;
+setParameter(11.3f, 0.008, 500, 100);
 
 }
-
-
 template<typename T>
 void Mpu9250Ahrs<T>::setTime(uint16_t mtime)
 {
